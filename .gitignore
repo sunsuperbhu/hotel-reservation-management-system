@@ -1,0 +1,13 @@
+# Maven build output
+/target/
+
+# Local application data may contain personal guest details
+/guests.json
+/hotel-state.json
+
+# Logs and generated Java files
+*.log
+*.class
+
+# Operating system metadata
+.DS_Store
