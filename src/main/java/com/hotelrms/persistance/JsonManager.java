@@ -9,6 +9,8 @@ import com.hotelrms.model.Room;
 import com.hotelrms.model.StandardRoom;
 import com.hotelrms.model.SuiteRoom;
 import com.hotelrms.service.HotelManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,6 +24,7 @@ import java.util.Map;
 
 public final class JsonManager {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonManager.class);
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -34,17 +37,30 @@ public final class JsonManager {
         if (parent != null) {
             Files.createDirectories(parent);
         }
-        MAPPER.writeValue(path.toFile(), createSnapshot(hotel));
+        try {
+            MAPPER.writeValue(path.toFile(), createSnapshot(hotel));
+        } catch (IOException exception) {
+            LOGGER.error("Failed to save hotel state to {}", path, exception);
+            throw exception;
+        }
+        LOGGER.info("Hotel state saved to {}", path);
         System.out.println("Hotel state saved to " + path);
     }
 
     public static void loadState(String fileName, HotelManager hotel) throws IOException {
         Path path = Path.of(fileName);
         if (!Files.exists(path)) {
+            LOGGER.error("Hotel state file does not exist: {}", path);
             throw new IOException("State file does not exist: " + path);
         }
 
-        StateFile state = MAPPER.readValue(path.toFile(), StateFile.class);
+        StateFile state;
+        try {
+            state = MAPPER.readValue(path.toFile(), StateFile.class);
+        } catch (IOException exception) {
+            LOGGER.error("Failed to read hotel state from {}", path, exception);
+            throw exception;
+        }
         if (state == null || state.guests == null || state.rooms == null || state.reservations == null) {
             throw new IOException("State file is missing guests, rooms, or reservations");
         }
@@ -100,6 +116,7 @@ public final class JsonManager {
                     + exception.getMessage(), exception);
         }
 
+        LOGGER.info("Hotel state loaded from {}", path);
         System.out.println("Hotel state loaded from " + path);
     }
 

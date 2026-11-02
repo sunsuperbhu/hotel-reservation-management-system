@@ -1,6 +1,8 @@
 package com.hotelrms.concurrency;
 
 import com.hotelrms.model.Room;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -11,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BookingService implements AutoCloseable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BookingService.class);
     private final ExecutorService executor;
 
     public BookingService(int numberOfThreads) {
@@ -23,11 +26,15 @@ public class BookingService implements AutoCloseable {
     public boolean bookRoom(Room room) {
         synchronized (room) {
             if (!room.isAvailable()) {
+                LOGGER.debug("Thread {} could not book room {} because it is already booked",
+                        Thread.currentThread().getName(), room.getRoomNumber());
                 System.out.println(Thread.currentThread().getName()
                         + " FAILED - room already booked");
                 return false;
             }
             room.setAvailable(false);
+            LOGGER.debug("Thread {} booked room {}",
+                    Thread.currentThread().getName(), room.getRoomNumber());
             System.out.println(Thread.currentThread().getName()
                     + " booking room " + room.getRoomNumber());
             return true;
